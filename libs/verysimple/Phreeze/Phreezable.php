@@ -397,13 +397,13 @@ abstract class Phreezable implements Serializable
 					$limitLeft = (int)$limits[0] - $limitRight;
 					
 					if ($left > $limitLeft || $right > $limitRight) {
-						$this->AddValidationError($prop,"$prop exceeds the maximum length of " . $fm->FieldSize . "");
+						$this->AddValidationError($prop,"$prop excede o tamanho máximo de " . $fm->FieldSize . " caracteres");
 					}
 					
 				}
 				elseif (is_numeric($fm->FieldSize) && ($lenfunction($this->$prop) > $fm->FieldSize))
 				{
-					$this->AddValidationError($prop,"$prop exceeds the maximum length of " . $fm->FieldSize . "");
+					$this->AddValidationError($prop,"$prop excede o tamanho máximo de " . $fm->FieldSize . " caracteres");
 				}
 
 				if ($this->$prop == "" && ($fm->DefaultValue || $fm->IsAutoInsert) )
@@ -423,20 +423,20 @@ abstract class Phreezable implements Serializable
 						case FM_TYPE_DECIMAL:
 							if (!is_numeric($this->$prop))
 							{
-								$this->AddValidationError($prop,"$prop is not a valid number");
+								$this->AddValidationError($prop,"$prop não é um número válido");
 							}
 							break;
 						case FM_TYPE_DATE:
 						case FM_TYPE_DATETIME:
 							if (strtotime($this->$prop) === '')
 							{
-								$this->AddValidationError($prop,"$prop is not a valid date/time value.");
+								$this->AddValidationError($prop,"$prop não é uma data/hora válida.");
 							}
 							break;
 						case FM_TYPE_ENUM:
 							if ( !in_array($this->$prop, $fm->GetEnumValues()) )
 							{
-								$this->AddValidationError($prop,"$prop is not valid value. Allowed values: " . implode(', ',$fm->GetEnumValues()) );
+								$this->AddValidationError($prop,"$prop não é um valor válido. Valores permitidos: " . implode(', ',$fm->GetEnumValues()) );
 							}
 							break;
 						default:

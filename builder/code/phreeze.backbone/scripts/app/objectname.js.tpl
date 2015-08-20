@@ -310,7 +310,7 @@ var page = {
 			wait: true,
 			success: function(){
 				$('#{$singular|lcfirst}DetailDialog').modal('hide');
-				setTimeout("app.appendAlert('{$singular} was sucessfully " + (isNew ? "inserted" : "updated") + "','alert-success',3000,'collectionAlert')",500);
+				setTimeout("app.appendAlert('{$singular} foi " + (isNew ? "inserido" : "editado") + " com sucesso','alert-success',3000,'collectionAlert')",500);
 				app.hideProgress('modelLoader');
 
 				// if the collection was initally new then we need to add it to the collection now
