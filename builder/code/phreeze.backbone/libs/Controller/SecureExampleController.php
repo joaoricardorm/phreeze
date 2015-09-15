@@ -86,7 +86,7 @@ class SecureExampleController extends AppBaseController
 		else
 		{
 			// login failed
-			$this->Redirect('SecureExample.LoginForm','Unknown username/password combination');
+			$this->Redirect('SecureExample.LoginForm','Combinaçãoo de usuário ou senha incorretos');
 		}
 	}
 	

@@ -1,6 +1,9 @@
 <?php
 /** @package    verysimple::Phreeze */
 
+//corrige problema com redirecionamento header location
+ob_start();
+
 /** import supporting libraries */
 require_once("verysimple/HTTP/RequestUtil.php");
 require_once("verysimple/HTTP/Context.php");
@@ -777,7 +780,7 @@ abstract class Controller
 	 * @param string $permission_denied_feedback (optional) Feedback to forward to the on_fail_action if user is logged in but does not have permission
 	 * @throws AuthenticationException
 	 */
-	protected function RequirePermission($permission, $on_fail_action = "", $not_authenticated_feedback = "Autentique-se para acessar esta p&aacute;gina", $permission_denied_feedback = "Voc&ecirc; n&atilde;o possui permiss&atilde;o para acessar essa p&aacute;gina ou sua sess&atilde;o expirou")
+	protected function RequirePermission($permission, $on_fail_action = "", $not_authenticated_feedback = "Autentique-se para acessar esta p&aacute;gina", $permission_denied_feedback = "Voc&ecirc; n&atilde;o possui permiss&atilde;o para acessar essa p&aacute;gina ou sua sess&atilde;o expirou", $this_page="")
 	{
 		$this->Phreezer->Observe("Checking For Permission '$permission'");
 		$cu = $this->GetCurrentUser();
@@ -790,7 +793,11 @@ abstract class Controller
 			
 			if ($on_fail_action && $this->IsApiRequest() == false)
 			{
-				//$this->Redirect($on_fail_action,array('feedback'=>$message,'warning'=>$message));
+				//variavel para redirecionar para página antiga caso o usuário tenha-a na url
+				$paginaAntiga = implode('.',$this->GetRouter()->GetRoute());
+				$this->Context->Set('paginaLoginRedirect', $paginaAntiga);
+
+				$this->Redirect($on_fail_action,array('feedback'=>$message,'warning'=>$message));
 			}
 			else
 			{
