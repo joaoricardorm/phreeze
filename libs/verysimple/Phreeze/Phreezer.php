@@ -491,7 +491,7 @@ class Phreezer extends Observable
 		if (!$obj = $ds->Next())
 		{
 			require_once("NotFoundException.php");
-			throw new NotFoundException("$objectclass with primary key of $id not found");
+			throw new NotFoundException("$objectclass com código #$id não foi encontrado(a)");
 		}
 
 		// cache the object for future use
@@ -510,7 +510,7 @@ class Phreezer extends Observable
 	 * @param bool $force_insert (default = false)
 	 * @return int the auto_increment id (insert) or the number of records updated (update)
 	 */
-	public function Save($obj, $force_insert = false)
+	public function Save($obj, $force_insert = false, $ignore_duplicate = false)
 	{
 		$objectclass = get_class($obj);
 		$fms = $this->GetFieldMaps($objectclass);
@@ -552,7 +552,7 @@ class Phreezer extends Observable
 				{
 					$prop = $fm->PropertyName;
 					$val = $obj->$prop;
-
+	
 					try
 					{
 						$sql .= $delim . "`" . $fm->ColumnName . "` = " . $this->GetQuotedSql($val);
@@ -574,7 +574,11 @@ class Phreezer extends Observable
 		else
 		{
 			// this is an insert
-			$sql = "insert into `$table` (";
+			$sql = "insert ";
+			//RICARDO - MINHA MOD PARA NAO DAR ERRO COM VALORES DUPLICADOS 
+			if($ignore_duplicate)
+				$sql .= ' ignore ';
+			$sql .= " into `$table` (";
 			$delim = "";
 			foreach ($fms as $fm)
 			{

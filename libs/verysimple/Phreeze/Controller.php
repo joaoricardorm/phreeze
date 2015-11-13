@@ -98,7 +98,7 @@ abstract class Controller
 			$this->Assign("CURRENT_USER",$this->GetCurrentUser());
 			$this->Assign("URL",$this->GetRouter());
 			$this->Assign("BROWSER_DEVICE",$this->GetDevice());
-	
+			
 			// if feedback was persisted, set it
 			$feedback = $this->Context->Get("feedback");
 			

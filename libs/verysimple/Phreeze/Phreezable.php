@@ -574,9 +574,9 @@ abstract class Phreezable implements Serializable
 	 * @param bool $force_insert (default = false)
 	 * @return int auto_increment or number of records affected
 	 */
-	function Save($force_insert = false)
+	function Save($force_insert = false, $ignore_duplicate = false)
 	{
-		return $this->_phreezer->Save($this,$force_insert);
+		return $this->_phreezer->Save($this,$force_insert,$ignore_duplicate);
 	}
 
 	/**

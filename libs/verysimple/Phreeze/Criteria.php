@@ -23,6 +23,7 @@ class Criteria
 	protected $_where_delim;
 	protected $_order;
 	protected $_order_delim;
+	protected $_limit;
 	protected $_is_prepared;
 
 	protected $_map_object_class;
@@ -32,7 +33,9 @@ class Criteria
 	
 	private $_constructor_where;
 	private $_constructor_order;
+	private $_constructor_limit;
 	private $_set_order;
+	private $_set_limit;
 	
 	private $_and = array();
 	private $_or = array();
@@ -45,13 +48,15 @@ class Criteria
 	 */
 	public $Filters;
 	
-	public function __construct($where = "", $order = "")
+	public function __construct($where = "", $order = "", $limit = "")
 	{
 		$this->_constructor_where = $where;
 		$this->_constructor_order = $order;
+		$this->_constructor_limit = $limit;
 		
 		$this->_where = $where;
 		$this->_order = $order;
+		$this->_limit = $limit;
 		
 		$this->Init();
 	}
@@ -389,6 +394,12 @@ class Criteria
 			{
 				$this->_order = " order by " . $this->_order;
 			}
+			
+			// if the user has called SetLimit then use that for the order
+			if ($this->_set_limit)
+			{
+				$this->_limit = $this->_set_limit;	
+			}
 
 			$this->OnPrepare();
 			$this->_is_prepared = true;
@@ -414,6 +425,12 @@ class Criteria
 	{
 		$this->Prepare();
 		return $this->_order;
+	}
+	
+	public final function GetLimit()
+	{
+		$this->Prepare();
+		return $this->_limit;
 	}
 
 	/**
@@ -444,6 +461,24 @@ class Criteria
 			$colname = $this->GetFieldFromProp($property);
 			$this->_set_order .= $this->_order_delim . $colname . ($desc ? " desc" : "");	
 		}
+
+	}
+	
+	/**
+	 * Ricardo, seta limite de resultados no SQL
+	 *
+	 * @param string $property the name of the object property (or '?' for random order)
+	 * @param bool $desc (optional) set to true to sort in descending order (default false)
+	 */
+	public function SetLimit($limit)
+	{
+		if (!$limit)
+		{
+			// no property was specified.
+			return;
+		}
+		
+		$this->_set_limit = (int)$limit;	
 
 	}
 	
