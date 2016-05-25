@@ -23,7 +23,7 @@ var app = {
 
 		var id = _.uniqueId('alert_');
 
-		var html = '<div id="'+id+'" class="alert '+ this.escapeHtml(style) +'" style="display: none;">'
+		var html = '<div id="'+id+'" class="alert animated fadeInDown '+ this.escapeHtml(style) +'" style="display: none;">'
 			+ '<a class="close" data-dismiss="alert">&times;</a>'
 			+ '<span>'+ this.escapeHtml(message) +'</span>'
 			+ '</div>';
@@ -51,6 +51,75 @@ var app = {
 		$("#"+id).slideUp('fast', function(){
 			$("#"+id).remove();
 		});
+	},
+
+	/**
+	 * obtém um parametro da URL
+	 * @param parametro procurado
+	 * @returns parametro encontrado string
+	 */
+
+
+	/**
+	 * remove _, espaço e deixa em minisculo a string para passar na url
+	 * @param string texto a ser convertido
+	 * @returns string tratada
+	 */
+	parseURL: function(str) {
+		str = str.replace(/^\s+|\s+$/g, ''); // trim
+		str = str.toLowerCase();
+
+		// remove accents, swap ñ for n, etc
+		var from = "àáäâèéëêìíïîòóöôùúüûñç·/_,:;";
+		var to   = "aaaaeeeeiiiioooouuuunc------";
+		for (var i=0, l=from.length ; i<l ; i++) {
+			str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
+		}
+
+		str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+			.replace(/\s+/g, '-') // collapse whitespace and replace by -
+			.replace(/-+/g, '-'); // collapse dashes
+
+		return str;
+	},
+
+	getUrlParameter: function(sParam) {
+		var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+			sURLVariables = sPageURL.split('&'),
+			sParameterName,
+			i;
+
+		for (i = 0; i < sURLVariables.length; i++) {
+			sParameterName = sURLVariables[i].split('=');
+
+			if (sParameterName[0] === sParam) {
+				return sParameterName[1] === undefined ? true : sParameterName[1];
+			}
+		}
+	},
+	/**
+	 * remove um parametro da URL
+	 * @param parametro procurado
+	 * @returns parametro encontrado string
+	 */
+	removeUrlParam: function(parameter){
+		var url=document.location.href;
+		var urlparts= url.split('?');
+
+		if (urlparts.length>=2) {
+			var urlBase=urlparts.shift();
+			var queryString=urlparts.join("?");
+
+			var prefix = encodeURIComponent(parameter)+'=';
+			var pars = queryString.split(/[&;]/g);
+			for (var i= pars.length; i-->0;)
+				if (pars[i].lastIndexOf(prefix, 0)!==-1)
+					pars.splice(i, 1);
+			url = urlBase+'?'+pars.join('&');
+			window.history.pushState('',document.title,url); // added this line to push the new url directly to url bar .
+
+		}
+		return url;
 	},
 
 	/**

@@ -4,7 +4,7 @@
 {block name=title}Error{/block}
 
 {block name=banner}
-	<h1>Oh Snap!</h1>
+	<h1>Erro!</h1>
 {/block}
 
 {block name=content}
@@ -16,10 +16,9 @@
 
 	<h3 onclick="$('#stacktrace').show('slow');" class="well" style="cursor: pointer;">{$message|escape}</h3>
 
-	<p>You may want to try returning to the the previous page and verifying that
-	all fields have been filled out correctly.</p>
+	<p>Tente novamente mais tarde.</p>
 
-	<p>If you continue to experience this error please contact support.</p>
+	<p>Se continuar vendo esse erro entre em contato com o suporte.</p>
 
 	<div id="stacktrace" class="well hide">
 		<p style="font-weight: bold;">Stack Trace:</p>

@@ -99,6 +99,12 @@ abstract class Controller
 			$this->Assign("URL",$this->GetRouter());
 			$this->Assign("BROWSER_DEVICE",$this->GetDevice());
 			
+			//RICARDO
+			$this->Assign("TP_ACESSO",0);
+			if($this->GetCurrentUser() && isset($this->GetCurrentUser()->TpAcesso))
+				$this->Assign("TP_ACESSO",$this->GetCurrentUser()->TpAcesso);
+				
+			
 			// if feedback was persisted, set it
 			$feedback = $this->Context->Get("feedback");
 			

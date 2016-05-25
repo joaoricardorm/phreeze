@@ -555,7 +555,8 @@ class Phreezer extends Observable
 	
 					try
 					{
-						$sql .= $delim . "`" . $fm->ColumnName . "` = " . $this->GetQuotedSql($val);
+						//$sql .= $delim . "`" . $fm->ColumnName . "` = " . $this->GetQuotedSql($val);
+						$sql .= ( $val != NULL ) ? $delim . "`" . $fm->ColumnName . "` = " . $this->GetQuotedSql($val) : $delim . "`" . $fm->ColumnName . "` = NULL ";
 					}
 					catch (Exception $ex)
 					{
@@ -611,7 +612,8 @@ class Phreezer extends Observable
 
 						try
 						{
-							$sql .= $delim . ' ' . $this->GetQuotedSql($val);
+							//$sql .= $delim . ' ' . $this->GetQuotedSql($val);
+							$sql .= ( $val != NULL ) ? $delim . ' ' . $this->GetQuotedSql($val) :  $delim . ' NULL ' ;
 						}
 						catch (Exception $ex)
 						{

@@ -18,6 +18,8 @@ var page = {
 	fetchInProgress: false,
 	dialogIsOpen: false,
 
+	idUrl:null,
+
 	/**
 	 *
 	 */
@@ -33,16 +35,25 @@ var page = {
 			e.preventDefault();
 			page.showDetailDialog();
 		});
+		
+		$("#excluir{$singular}Button").click(function(e) {
+			e.preventDefault();
+			page.excluirModel();
+		});
 
+		//RICARDO - DEIXAR SÓ SHOW SE NÃO FOR SMARTADMIN
 		// let the page know when the dialog is open
-		$('#{$singular|lcfirst}DetailDialog').on('show',function() {
+		$('#{$singular|lcfirst}DetailDialog').on('show.bs.modal',function() {
 			page.dialogIsOpen = true;
 		});
 
+		//RICARDO - DEIXAR SÓ HIDDEN SE NÃO FOR SMARTADMIN
 		// when the model dialog is closed, let page know and reset the model view
-		$('#{$singular|lcfirst}DetailDialog').on('hidden',function() {
+		$('#{$singular|lcfirst}DetailDialog').on('hidden.bs.modal',function() {
 			$('#modelAlert').html('');
 			page.dialogIsOpen = false;
+
+			app.removeUrlParam('id');
 		});
 
 		// save the model when the save button is clicked
@@ -68,15 +79,41 @@ var page = {
 		// make the rows clickable ('rendered' is a custom event, not a standard backbone event)
 		this.collectionView.on('rendered',function(){
 
+			if (page.idUrl && page.idUrl != '' && page.isInitializing) {
+				var m = page.{$plural|lcfirst}.get(page.idUrl);
+				if(m) page.showDetailDialog(m);
+			}
+
+			// Adiciona o atributo data-title nas tr da tabela para responsividade
+			$( "table.collection tbody td" ).each(function(index){
+				total = $( "table.collection thead th").length;
+				titulo = $( "table.collection thead th").eq(index % total).text();
+
+				$(this).attr('data-title',titulo);
+			});
+			
 			// attach click handler to the table rows for editing
 			$('table.collection tbody tr').click(function(e) {
+				$(this).addClass('active').siblings().removeClass('active');
+				page.updateModelSelecionado($(this).attr('id'));
+			});
+			$('table.collection tbody tr').dblclick(function(e) {
 				e.preventDefault();
+				
+				$(this).addClass('active').siblings().removeClass('active');
+				page.updateModelSelecionado($(this).attr('id'));
+				
 				var m = page.{$plural|lcfirst}.get(this.id);
+				page.showDetailDialog(m);
+			});
+			$('table.collection tbody tr td.edit').click(function(e) {
+				e.preventDefault();
+				var m = page.{$plural|lcfirst}.get($(this).parent().attr('id'));
 				page.showDetailDialog(m);
 			});
 
 			// make the headers clickable for sorting
- 			$('table.collection thead tr th').click(function(e) {
+ 			$('table.collection thead tr th:not(#header_Edit)').click(function(e) {
  				e.preventDefault();
 				var prop = this.id.replace('header_','');
 
@@ -96,10 +133,27 @@ var page = {
 			
 			page.isInitialized = true;
 			page.isInitializing = false;
-		});
+		});		
+		
+		try {
+			if (window.atob) {
+				page.idUrl = atob(app.getUrlParameter('id').hex2bin());
+			} else {
+				page.idUrl = Base64.decode(app.getUrlParameter('id').hex2bin());
+			}
+		} catch(ex){
+			// senão tenta usar o id padrao
+			if (app.getUrlParameter('id') && app.getUrlParameter('id') != '')
+				page.idUrl = app.getUrlParameter('id');
+		}	
 
+		if(page.idUrl && page.idUrl != '' && app.getUrlParameter('sp'))
+			page.fetchParams.id{$singular} = page.idUrl;
+
+		page.fetchParams.page = 1;
+		
 		// backbone docs recommend bootstrapping data on initial page load, but we live by our own rules!
-		this.fetch{$plural}({ page: 1 });
+		this.fetch{$plural}(page.fetchParams);
 
 		// initialize the model view
 		this.modelView = new view.ModelView({
@@ -118,6 +172,16 @@ var page = {
 
 			}, model.longPollDuration);
 		}
+	},
+	
+	updateModelSelecionado: function(idSelecionado){
+		//marca o model atual o que estiver com highlight na lista
+		page.{$singular|lcfirst} = page.{$plural|lcfirst}.get(idSelecionado);
+
+		if(!page.{$singular|lcfirst})
+			return false;
+
+		$('#excluir{$singular}Button').prop('disabled',false);
 	},
 
 	/**
@@ -150,12 +214,16 @@ var page = {
 
 				app.hideProgress('loader');
 				page.fetchInProgress = false;
+				
+				$('#carregandoCollection').hide();
 			},
 
 			error: function(m, r) {
-				app.appendAlert(app.getErrorMessage(r), 'alert-error',0,'collectionAlert');
+				app.appendAlert(app.getErrorMessage(r), 'alert-danger',0,'collectionAlert');
 				app.hideProgress('loader');
 				page.fetchInProgress = false;
+				
+				$('#carregandoCollection').hide();
 			}
 
 		});
@@ -167,6 +235,15 @@ var page = {
 	 */
 	showDetailDialog: function(m) {
 
+		//desabilita botoes rodape
+		$('.modal:not(.btn-bottom-enabled, .bootbox) .modal-footer .btn').prop('disabled', true);
+		$('.modal').on('change', 'input, select, option, textarea, #btnUpload', function () {
+			$('.modal .modal-footer .btn').removeAttr("disabled");
+		});
+	
+		//adiciona a url do model
+		if(m && !app.getUrlParameter('sp')) history.pushState('Object', '{$singular}', base+'{$plural|lcfirst}?id='+m.id);
+
 		// show the modal dialog
 		$('#{$singular|lcfirst}DetailDialog').modal({ show: true });
 
@@ -177,10 +254,17 @@ var page = {
 		page.modelView.model = page.{$singular|lcfirst};
 
 		if (page.{$singular|lcfirst}.id == null || page.{$singular|lcfirst}.id == '') {
+			$('#titulo-modal').html('Cadastrar');
+			$('#icone-acao-modal').removeClass('fa-edit').addClass('fa-plus');
+
 			// this is a new record, there is no need to contact the server
 			page.renderModelView(false);
 		} else {
 			app.showProgress('modelLoader');
+
+			//titulo do modal
+			$('#titulo-modal').html('Editar');
+			$('#icone-acao-modal').removeClass('fa-plus').addClass('fa-edit');
 
 			// fetch the model from the server so we are not updating stale data
 			page.{$singular|lcfirst}.fetch({
@@ -191,7 +275,7 @@ var page = {
 				},
 
 				error: function(m, r) {
-					app.appendAlert(app.getErrorMessage(r), 'alert-error',0,'modelAlert');
+					app.appendAlert(app.getErrorMessage(r), 'alert-danger',0,'modelAlert');
 					app.hideProgress('modelLoader');
 				}
 
@@ -232,7 +316,12 @@ var page = {
 		{$column->NameWithoutPrefix|studlycaps|lcfirst|escape}Values.fetch({
 			success: function(c){
 				var dd = $('#{$column->NameWithoutPrefix|studlycaps|lcfirst|escape}');
-				dd.append('<option value=""></option>');
+				
+				if(page.{$singular|lcfirst}.isNew())
+					dd.append('<option value="" disabled="disabled" selected>Selecione uma opção...</option>');
+				else
+					dd.append('<option value="" disabled="disabled">Selecione uma opção...</option>');
+				
 				c.forEach(function(item,index) {
 					dd.append(app.getOptionHtml(
 						item.get('{$constraint->ReferenceKeyColumnNoPrefix|studlycaps|lcfirst}'),
@@ -242,13 +331,14 @@ var page = {
 				});
 				
 				if (!app.browserSucks()) {
-					dd.combobox();
+					//RICARDO - REATIVAR SE USAR O SISTEMA DE TEMAS PADRAO DO PHREEZE
+					//dd.combobox();
 					$('div.combobox-container + span.help-inline').hide(); // TODO: hack because combobox is making the inline help div have a height
 				}
 
 			},
 			error: function(collection,response,scope) {
-				app.appendAlert(app.getErrorMessage(response), 'alert-error',0,'modelAlert');
+				app.appendAlert(app.getErrorMessage(response), 'alert-danger',0,'modelAlert');
 			}
 		});
 
@@ -266,7 +356,7 @@ var page = {
 
 			$('#delete{$singular}Button').click(function(e) {
 				e.preventDefault();
-				$('#confirmDelete{$singular}Container').show('fast');
+				$('#confirmDelete{$singular}Container').show('fast').removeClass('hide');
 			});
 
 			$('#cancelDelete{$singular}Button').click(function(e) {
@@ -288,7 +378,10 @@ var page = {
 	/**
 	 * update the model that is currently displayed in the dialog
 	 */
-	updateModel: function() {
+	updateModel: function(closeModal) {
+		
+		closeModal = typeof closeModal !== 'undefined' ? closeModal : true;
+		
 		// reset any previous errors
 		$('#modelAlert').html('');
 		$('.control-group').removeClass('error');
@@ -309,8 +402,18 @@ var page = {
 		}, {
 			wait: true,
 			success: function(){
-				$('#{$singular|lcfirst}DetailDialog').modal('hide');
-				setTimeout("app.appendAlert('{$singular} foi " + (isNew ? "inserido" : "editado") + " com sucesso','alert-success',3000,'collectionAlert')",500);
+
+				//para não exibir a confirmação de cancelar alterações no modal
+				cancelarAlteracoes = true;
+			
+				//apaga url, para dar um refresh limpo ao salvar
+				page.idUrl = '';
+
+				if(closeModal) {
+					$('#{$singular|lcfirst}DetailDialog').modal('hide');
+					setTimeout("app.appendAlert('{$singular} foi " + (isNew ? "inserido" : "editado") + " com sucesso','alert-success',3000,'collectionAlert')",500);
+				}
+				
 				app.hideProgress('modelLoader');
 
 				// if the collection was initally new then we need to add it to the collection now
@@ -322,10 +425,13 @@ var page = {
 				}
 		},
 			error: function(model,response,scope){
+				
+				//para exibir a confirmação de cancelar alterações no modal
+				cancelarAlteracoes = false;
 
 				app.hideProgress('modelLoader');
 
-				app.appendAlert(app.getErrorMessage(response), 'alert-error',0,'modelAlert');
+				app.appendAlert(app.getErrorMessage(response), 'alert-danger',0,'modelAlert');
 
 				try {
 					var json = $.parseJSON(response.responseText);
@@ -345,6 +451,54 @@ var page = {
 	},
 
 	/**
+	 * exclusao sem abrir o modal
+	 */
+	excluirModel: function() {
+
+		//marca o model atual o que estiver com highlight na lista
+		page.{$singular|lcfirst} = page.{$plural|lcfirst}.get($('table.collection tbody tr.active').attr('id'));
+
+		//se nao tiver selecionado nenhum item
+		if (!page.{$singular|lcfirst} || $('table.collection tbody tr.active').length === 0){
+
+			page.{$singular|lcfirst} = null;
+
+			bootbox.alert({
+				backdrop: true,
+				title: 'Excluir {$singular}!',
+				className: "modal-lg",
+				message: '<h3 class="no-margin">Selecione um {$singular} primeiro!</h3>'
+			});
+			return;
+		}
+
+		bootbox.dialog({
+			backdrop: true,
+			className: "modal-lg",
+			title: 'Excluir {$singular}!',
+			message: '<h3 class="no-margin">Tem certeza que deseja excluir o {$singular}?</h3> <hr>' +
+			'NOME DO CAMPO <b>'+page.{$singular|lcfirst}.get('id{$singular}')+'</b><br>',
+			buttons: {
+				success: {
+					label: '<i class="fa fa-check"></i> Sim',
+					className: 'btn-danger',
+					callback: function () {
+						page.deleteModel(true); //softDelete
+					},
+				},
+				cancel: {
+					label: "Não",
+					className: "btn-default",
+					callback: function () {
+						return;
+					}
+				}
+			}
+		});
+
+	},
+	
+	/**
 	 * delete the model that is currently displayed in the dialog
 	 */
 	deleteModel: function()	{
@@ -357,7 +511,7 @@ var page = {
 			wait: true,
 			success: function(){
 				$('#{$singular|lcfirst}DetailDialog').modal('hide');
-				setTimeout("app.appendAlert('The {$singular} record was deleted','alert-success',3000,'collectionAlert')",500);
+				setTimeout("app.appendAlert('{$singular} foi excluido','alert-success',3000,'collectionAlert')",500);
 				app.hideProgress('modelLoader');
 
 				if (model.reloadCollectionOnModelUpdate) {
@@ -366,7 +520,7 @@ var page = {
 				}
 			},
 			error: function(model,response,scope) {
-				app.appendAlert(app.getErrorMessage(response), 'alert-error',0,'modelAlert');
+				app.appendAlert(app.getErrorMessage(response), 'alert-danger',0,'modelAlert');
 				app.hideProgress('modelLoader');
 			}
 		});
