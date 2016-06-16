@@ -160,6 +160,8 @@
 
 									</div><!--no-more-tables-->
 
+									<%= view.getItensPorPagina(items.pageSize, items.totalResults) %>
+									
 									<div class="text-center">
 										<%=  view.getPaginationHtml(page) %>
 									</div>

@@ -591,8 +591,12 @@ class Phreezer extends Observable
 					{
 						$prop = $fm->PropertyName;
 						$val = $obj->$prop;
-						$sql .= $delim . "`" . $fm->ColumnName . "`";
-						$delim = ", ";
+
+						//RICARDO - SE VALOR DIFETNE DE NULL, ELE INSERE
+						if( $val != NULL ) {
+							$sql .= $delim . "`" . $fm->ColumnName . "`";
+							$delim = ", ";
+						}
 					}
 				}
 			}
@@ -613,7 +617,7 @@ class Phreezer extends Observable
 						try
 						{
 							//$sql .= $delim . ' ' . $this->GetQuotedSql($val);
-							$sql .= ( $val != NULL ) ? $delim . ' ' . $this->GetQuotedSql($val) :  $delim . ' NULL ' ;
+							$sql .= ( $val != NULL ) ? $delim . ' ' . $this->GetQuotedSql($val) :  '' ;
 						}
 						catch (Exception $ex)
 						{

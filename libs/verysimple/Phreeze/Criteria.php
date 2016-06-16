@@ -434,6 +434,8 @@ class Criteria
 	}
 
 	/**
+	 * * Ricardo, permite usar mais de um campo na ordenacao
+	 *
 	 * Adds an object property to the order by clause.  If any sorting needs to be done
 	 * on foreign tables, then for the moment, you need to override this method and
 	 * handle it manually.  You can call this method repeatedly to add more than
@@ -442,6 +444,29 @@ class Criteria
 	 * @param string $property the name of the object property (or '?' for random order)
 	 * @param bool $desc (optional) set to true to sort in descending order (default false)
 	 */
+	/*public function SetOrder($property,$desc = false)
+	{
+		if (!$property)
+		{
+			// no property was specified.
+			return;
+		}
+
+		$this->_order_delim = ($this->_set_order) ? "," : "";
+
+		if($property == '?')
+		{
+			$this->_set_order = "RAND()" . $this->_order_delim . $this->_set_order;
+		}
+		else
+		{
+
+			$colname = $this->GetFieldFromProp($property);
+			$this->_set_order .= $this->_order_delim . $colname . ($desc ? " desc" : "");
+		}
+
+	}*/
+
 	public function SetOrder($property,$desc = false)
 	{
 		if (!$property)
@@ -458,9 +483,27 @@ class Criteria
 		}
 		else
 		{
-			$colname = $this->GetFieldFromProp($property);
-			$this->_set_order .= $this->_order_delim . $colname . ($desc ? " desc" : "");	
+			$orderFields = explode(',',$property);
+
+			foreach($orderFields as $property) {
+				$colname[] = $this->GetFieldFromProp($property);
+			}
+
+			$colnameOrder = null;
+
+			$i=0;
+			foreach($colname as $coluna){
+
+				$join = ($i > 0) ? ',' : '';
+				$colnameOrder .= $join . $coluna . ($desc ? " desc" : " asc");
+
+			$i++;
+			}
+
+			$this->_set_order .= $this->_order_delim . $colnameOrder;
 		}
+
+		//error_log("ORDER BY ".$this->_set_order, 0);
 
 	}
 	
